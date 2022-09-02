@@ -1,46 +1,48 @@
-const { Schema, Types, model } = require("mongoose");
-const { isEmail } = require("validator");
+const { Schema, model } = require('mongoose');
+const { isEmail } = require('validator');
 
-const userSchema = new Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true,
-  },
-  email: {
-      type: String,
-      required: true,
-      unique: true,
-      validate: [isEmail, "invalid email"],
-  },
-  thoughts: [
+const userSchema = new Schema(
     {
-      type: Types.ObjectId, 
-      ref: "Thought",
+        username: {
+            type: String,
+            required: true,
+            unique: true,
+            trim: true,
+        },
+        email: {
+            type: String,
+            unique: true,
+            validate: [isEmail, "Invalid email format"], // TEST.            
+        },
+        thoughts: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Thoughts",
+            }
+        ],
+        friends: [
+            {
+                type: Schema.Types.ObjectId,
+                ref: "Users",
+            }
+        ]
     },
-  ],
-  friends: [
     {
-      type: Types.ObjectId,
-      ref: "User",
-    },
-  ],
-},
-{
-  toJSON: {
-    virtuals: true,
-    getters: true,
-  },
-  id: false,
-}
+        toJSON: {
+            getters: true,
+        },
+    }
 );
 
-/* Create a virtual called friendCount that retrieves the length of the user's friends array field on query */
-userSchema.virtual('friendCount').get(function() {
-  return this.friends.length
-})
+// Virtual to track total friend count for the user:
+userSchema.virtual("friendCount").get(() => {
+    if (this.friends) {
+    return this.friends.length;
+    } else if (!this.friends) {
+    return 0;
+    }
+});
 
-const User = model("User", userSchema);
+const User = model('user', userSchema);
 
 module.exports = User;

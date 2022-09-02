@@ -1,114 +1,90 @@
-const { User, Thought, Types } = require("../models");
+const { json } = require("express");
+const { Thought, User } = require("../models");
 
 const thoughtController = {
   getAllThoughts(req, res) {
     Thought.find()
-      .then((thoughts) => res.json(thoughts))
+      .select("-__v")
+      .then((allThoughts) => res.json(allThoughts))
       .catch((err) => res.status(500).json(err));
   },
-
-  getThoughtById(req, res) {
-    Thought.findOne({ _id: req.params.id })
+  getOneThought(req, res) {
+    Thought.findOne({ _id: req.params.thoughtId })
       .select("-__v")
-      .then((thoughts) => {
-        if (!thoughts) {
+      .then((oneThought) => {
+        if (!oneThought) {
           return res
             .status(404)
-            .json({ message: "No thought was found with this ID" });
+            .json({ message: "Thought with this ID not found." });
         }
-        res.json(thoughts);
+        res.json(oneThought);
       })
-      .catch((err) => {
-        console.log(`ERROR: Failed to get one thought! | ${err.message}`);
-        res.status(500).json(err);
-      });
+      .catch((err) => res.status(500).json(err));
   },
-
   createThought(req, res) {
     Thought.create(req.body)
-      .then((thoughts) =>
-        res.json({ message: "Created a new thought!", thoughts })
-      )
-      .catch((err) => {
-        console.log(`ERROR: Failed to create a new thought! | ${err.message}`);
-        res
-          .status(500)
-          .json({ message: "Failed to create a new thought!", err });
-      });
-  },
-
-  deleteThought(req, res) {
-    Thought.findOneAndDelete({ _id: req.params.id })
-      .then((thoughts) => {
-        if (!thoughts) {
-          return res
-            .status(404)
-            .json({ message: "No thought was found with this ID" });
-        }
-        res.json({ message: "Thought deleted", thoughts });
+      .then((thought) => {
+        return User.findOneAndUpdate(
+          { _id: req.body.userId },
+          { $addToSet: { thoughts: thought._id } },
+          { new: true }
+        );
       })
-      .catch((err) => {
-        console.log(`ERROR: Failed to delete thought! | ${err.message}`);
-        res.status(500).json({ message: "Failed to delete thought!", err });
-      });
+      .then((user) => {
+        if (!user) {
+          return res.status(404).json({
+            message: "Thought created but no user found with this ID.",
+          });
+        }
+        res.json("Thought successfully created.");
+      })
+      .catch((err) => res.status(500).json(err));
   },
-
   updateThought(req, res) {
     Thought.findOneAndUpdate(
-      { _id: req.params.id },
+      { _id: req.params.thoughtId },
       { $set: req.body },
-      { runValidators: true, new: true }
-    )
-      .then((thoughts) => {
-        if (!thoughts) {
-          return res
-            .status(404)
-            .json({ message: "No thought was found with this ID" });
-        }
-        res.json({ message: "Thought updated", thoughts });
-      })
-      .catch((err) => {
-        console.log(`ERROR: Failed to update thought! | ${err.message}`);
-        res.status(500).json({ message: "Failed to update thought!", err });
-      });
-  },
-
-  createReaction(req, res) {
-    Thought.findOneAndUpdate(
-      { _id: req.params.thoughtId },
-      { $push: { reactions: req.body } },
-      { runValidators: true, new: true }
-    )
-      .then((newReaction) => {
-        if (!newReaction) {
-          res.status(404).json({ message: "No thought found with that ID!" });
-          return;
-        }
-        res.json({ message: "Reacted to thought!", newReaction });
-      })
-      .catch((err) => {
-        console.log(`ERROR: Failed to react to thought! | ${err.message}`);
-        res
-          .status(500)
-          .json({ message: "Failed to react to thought!", err });
-      });
-  },
-
-  deleteReaction(req, res) {
-    Thought.findOneAndUpdate(
-      { _id: req.params.thoughtId },
-      { $pull: { reactions: { reactionId: req.params.reactionId } } },
       { new: true }
     )
-      .then((reactionDeleted) => {
-        res.json({message: "Reaction deleted!", reactionDeleted});
+      .then((updatedThought) => res.json(updatedThought))
+      .catch((err) => res.status(500).json(err));
+  },
+  deleteThought(req, res) {
+    Thought.findOneAndDelete({ _id: req.params.thoughtId })
+      .then((deletedThought) => res.json(deletedThought))
+      .catch((err) => res.status(500).json(err));
+  },
+  addReaction(req, res) {
+    Thought.findOneAndUpdate(
+      { _id: req.params.thoughtId },
+      { $addToSet: { reactions: req.body } },
+      { new: true }
+    )
+      .then((thought) => {
+        if (!thought) {
+          return res
+            .status(400)
+            .json({ message: "No thought with this ID found." });
+        }
+        res.json(thought);
       })
-      .catch((err) => {
-        console.log(`ERROR: Failed to delete reaction! | ${err.message}`);
-        res
-          .status(500)
-          .json({ message: "Failed to delete reaction!", err });
-      });
+      .catch((err) => res.status(500).json(err));
+  },
+  removeReaction(req, res) {
+    Thought.findByIdAndUpdate(
+      { _id: req.params.thoughtId },
+      { $pull: { reactions: { reactionID: req.params.reactionID } } },
+      { new: true }
+    )
+      .then((thought) => {
+        if (!thought) {
+          return res
+            .status(400)
+            .json({ message: "No thought with this ID found." });
+        }
+        res.json(thought);
+      })
+      .catch((err) => res.status(500).json(err));
   },
 };
 
