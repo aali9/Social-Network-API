@@ -1,7 +1,8 @@
-const router = require("express").Router();
-const apiRoutes = require("./api");
+const router = require('express').Router();
+const apiRoutes = require('./api');
 
-router.use("/api", apiRoutes);
-router.use((req, res) => res.send("Incorrect route provided."))
+router.use('/api', apiRoutes);
+
+router.use((req, res) => res.send('Borked it mate!'));
 
 module.exports = router;

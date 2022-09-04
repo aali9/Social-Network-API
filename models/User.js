@@ -1,48 +1,48 @@
 const { Schema, model } = require('mongoose');
-const { isEmail } = require('validator');
+const ReacSchema = require('./Reaction');
 
-const userSchema = new Schema(
-    {
-        username: {
-            type: String,
-            required: true,
-            unique: true,
-            trim: true,
-        },
-        email: {
-            type: String,
-            unique: true,
-            validate: [isEmail, "Invalid email format"], // TEST.            
-        },
-        thoughts: [
-            {
-                type: Schema.Types.ObjectId,
-                ref: "Thoughts",
-            }
-        ],
-        friends: [
-            {
-                type: Schema.Types.ObjectId,
-                ref: "Users",
-            }
-        ]
+
+// Schema to create User model
+const UserSchema = new Schema(
+  {
+    username: {
+      type: String,
+      unique: true,
+      required: true,
+      max_length: 50,
     },
-    {
-        toJSON: {
-            getters: true,
-        },
-    }
+    email: {
+        type: String,
+        required: true,
+        unique: true,
+      // must match valid email1!!!
+    },
+    thoughts: [{
+              type: Schema.Types.ObjectId,
+              ref: 'Thoughts',
+            
+          },
+        ],  
+    friends: [{
+      type: Schema.Types.ObjectId,
+      ref: 'User',
+    },
+  ],    
+  },
+  {
+    toJSON: {
+      virtual: true,
+    },
+    id: false,
+  }
 );
 
-// Virtual to track total friend count for the user:
-userSchema.virtual("friendCount").get(() => {
-    if (this.friends) {
+UserSchema
+  .virtual('friendCount')
+  .get(function () {
     return this.friends.length;
-    } else if (!this.friends) {
-    return 0;
-    }
-});
+  });
 
-const User = model('user', userSchema);
+const User = model('User', UserSchema);
 
 module.exports = User;

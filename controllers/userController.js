@@ -1,70 +1,112 @@
-const { User, Thought } = require("../models");
+const { ObjectId } = require('mongoose').Types;
+const { User, Thoughts } = require('../models');
 
-const userControllers = {
-  getAllUsers(req, res) {
+
+
+module.exports = {
+
+
+  getallUsers(req, res) {
     User.find()
-      .select("-__v")
-      .then((allUsers) => res.json(allUsers))
-      .catch((err) => res.status(500).json(err));
-  },
-  getOneUser(req, res) {
-    User.findOne({ _id: req.params.userId })
-      .select("-__v")
-      .then((oneUser) => {
-        if (!oneUser) {
-          return res
-            .status(404)
-            .json({ message: "No user was found with this ID" });
-        }
-        res.json(oneUser);
+      .then(async (user) => {
+        const UserOB = {
+          user,
+        //   headCount: await headCount(),
+        };
+        return res.json(UserOB);
       })
-      .catch((err) => res.status(500).json(err));
+      .catch((err) => {
+        console.log("borked", err);
+        return res.status(500).json(err);
+      });
   },
-  createUser(req, res) {
+// below works!!
+  getUserbyID(req, res) {
+    User.findOne({ _id: req.params.id })
+      .select('-__v')
+      .then(async (user) =>
+        !user
+          ? res.status(404).json({ message: 'No such user exists with that ID!' })
+          : res.json({
+            user
+            })
+      )
+      .catch((err) => {
+        console.log("borked", err);
+        return res.status(500).json(err);
+      });
+  },
+
+  // below works
+createUser(req, res) {
     User.create(req.body)
-      .then((newUser) => res.json(newUser))
-      .catch((err) => res.status(500).json(err));
+      .then((User) => res.json({message: "Wahoo! You created a new user!!", User}))
+      .catch((err) => res.status(500).json({message: "Borked!!", err}));
   },
+
+// below works
+  deleteUser(req, res) {
+    User.findOneAndRemove({ _id: req.params.id })
+      .then((user) => 
+        !user
+          ? res
+            .status(404)
+            .json({ message: "No such user exists with that ID! " })
+          :res.json({message:"Wahoo! That user has been deleted successfully!", user})
+      )
+      .catch((err) => res.status(500).json({message: "Borked!!", err}));
+  },
+
+
   updateUser(req, res) {
     User.findOneAndUpdate(
-      { _id: req.params.userId },
+      { _id: req.params.id },
       { $set: req.body },
-      { new: true }
+      { runValidators: true, new: true }
     )
-      .then((updatedUser) => res.json(updatedUser))
-      .catch((err) => res.status(500).json(err));
+      .then((user) =>
+        !user
+          ? res.status(404).json({ message: 'No such user exists with that ID!' })
+          : res.json({message:"Wahoo! You have made changes and updated this user successfully!", user})
+      )
+      .catch((err) => res.status(500).json({message: "Borked!!", err}));
   },
-  deleteUser(req, res) {
-    User.findOneAndDelete({ _id: req.params.userId })
-      .then((deletedUser) => {
-        if(!deletedUser) {
-          return res.status(404).json({message: "No user was found with this ID."})
-        }
-        return Thought.deleteMany({ _id: { $in: deletedUser.thoughts }})
-      })
-      .then(() => {
-        res.json({message: "User and thoughts successfully deleted."})
-      })
-      .catch((err) => res.status(500).json(err));
-  },
-  addFriend(req, res) {
+
+
+//   adding a friend.
+ newFriend(req,res){
+    User.findByIdAndUpdate(
+        {_id: req.params.id},
+        {$push: { friends: req.params.friendId }},
+        {runValidators: true, new: true}
+        )
+        .select('-__v')
+        .then((user)=> {
+            if(!user){
+                res.status(404).json({ message: "No such user exists with that ID!" })
+                return;
+            }
+   
+            res.json({message:"Wahoo! You've added a new friend to this user!", user});
+        })
+        .catch((err)=>{
+            res.status(400).json({message: "Borked!!", err})
+        })
+},
+
+  deleteFriend(req, res) {
     User.findOneAndUpdate(
-      { _id: req.params.userId },
-      { $addToSet: { friends: req.params.friendId } },
-      { new: true }
+      { _id: req.params.id },
+      { $pull: { friends:req.params.friendId } },
+ { runValidators: true, new: true }
     )
-      .then((newFriend) => res.json(newFriend))
-      .catch((err) => res.status(500).json(err));
-  },
-  removeFriend(req, res) {
-    User.findOneAndUpdate(
-      { _id: req.params.userId },
-      { $pull: { friends: req.params.friendId } },
-      { new: true }
-    )
-      .then((removedFriend) => res.json(removedFriend))
-      .catch((err) => res.status(500).json(err));
+      .then((user) =>
+        !user
+          ? res
+              .status(404)
+              .json({ message: "No such user exists with that ID!" })
+          : res.json({message:"Wahoo! You've deleted a friend from this user!", user})
+      )
+      .catch((err) => res.status(500).json({message: "Borked!!", err}));
   },
 };
-
-module.exports = userControllers;

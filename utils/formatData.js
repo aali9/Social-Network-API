@@ -1,5 +1,8 @@
-function formatDate (date) {
-    return new Date(date).toLocaleString();
+const daysjs = require("dayjs");
+
+const formatdates = (date) => {
+  const Dates = dayjs().format("DD, MMM, YYYY");
+  return Dates;
 };
 
-module.exports = formatDate;
+module.exports = formatdates;
