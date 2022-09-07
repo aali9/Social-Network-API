@@ -1,14 +1,16 @@
 const express = require('express');
 const mongoose = require ('mongoose')
-const db = require('./config/connection');
-// const cwd = process.cwd();
 
-const PORT = process.env.PORT || 3007;
+
 const app = express();
 
+const PORT = process.env.PORT || 3007;
 
-app.use(express.urlencoded({ extended: true }));
 app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+
+
+app.use(express.static('public'));
 
 app.use(require ('./routes'));
 
@@ -21,10 +23,8 @@ mongoose.connect(
   }
 );
 
+mongoose.set('debug', true);
 
-
-db.once('open', () => {
   app.listen(PORT, () => {
-    console.log(`Wahoo! Your app is now listening on ${PORT}!`);
+    console.log(`Well DONE!! Your app is now listening on ${PORT}!`);
   });
-});
