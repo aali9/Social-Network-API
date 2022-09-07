@@ -1,5 +1,5 @@
 const { Schema, model } = require('mongoose');
-const ReacSchema = require('./Reaction');
+
 
 
 // Schema to create User model
@@ -15,7 +15,7 @@ const UserSchema = new Schema(
         type: String,
         required: true,
         unique: true,
-      // must match valid email1!!!
+    
     },
     thoughts: [{
               type: Schema.Types.ObjectId,

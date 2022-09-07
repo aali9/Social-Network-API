@@ -1,112 +1,102 @@
-const { ObjectId } = require('mongoose').Types;
-const { User, Thoughts } = require('../models');
+const {Users} = require('../models');
 
+const usersController = {
+    
 
+    createUsers({body}, res) {
+        Users.create(body)
+        .then(dbUsersData => res.json(dbUsersData))
+        .catch(err => res.status(400).json(err));
+    },
 
-module.exports = {
-
-
-  getallUsers(req, res) {
-    User.find()
-      .then(async (user) => {
-        const UserOB = {
-          user,
-        //   headCount: await headCount(),
-        };
-        return res.json(UserOB);
-      })
-      .catch((err) => {
-        console.log("borked", err);
-        return res.status(500).json(err);
-      });
-  },
-// below works!!
-  getUserbyID(req, res) {
-    User.findOne({ _id: req.params.id })
-      .select('-__v')
-      .then(async (user) =>
-        !user
-          ? res.status(404).json({ message: 'No such user exists with that ID!' })
-          : res.json({
-            user
-            })
-      )
-      .catch((err) => {
-        console.log("borked", err);
-        return res.status(500).json(err);
-      });
-  },
-
-  // below works
-createUser(req, res) {
-    User.create(req.body)
-      .then((User) => res.json({message: "Wahoo! You created a new user!!", User}))
-      .catch((err) => res.status(500).json({message: "Borked!!", err}));
-  },
-
-// below works
-  deleteUser(req, res) {
-    User.findOneAndRemove({ _id: req.params.id })
-      .then((user) => 
-        !user
-          ? res
-            .status(404)
-            .json({ message: "No such user exists with that ID! " })
-          :res.json({message:"Wahoo! That user has been deleted successfully!", user})
-      )
-      .catch((err) => res.status(500).json({message: "Borked!!", err}));
-  },
-
-
-  updateUser(req, res) {
-    User.findOneAndUpdate(
-      { _id: req.params.id },
-      { $set: req.body },
-      { runValidators: true, new: true }
-    )
-      .then((user) =>
-        !user
-          ? res.status(404).json({ message: 'No such user exists with that ID!' })
-          : res.json({message:"Wahoo! You have made changes and updated this user successfully!", user})
-      )
-      .catch((err) => res.status(500).json({message: "Borked!!", err}));
-  },
-
-
-//   adding a friend.
- newFriend(req,res){
-    User.findByIdAndUpdate(
-        {_id: req.params.id},
-        {$push: { friends: req.params.friendId }},
-        {runValidators: true, new: true}
-        )
+    
+    getAllUsers(req, res) {
+        Users.find({})
+        .populate({path: 'thoughts', select: '-__v'})
+        .populate({path: 'friends', select: '-__v'})
         .select('-__v')
-        .then((user)=> {
-            if(!user){
-                res.status(404).json({ message: "No such user exists with that ID!" })
+        .then(dbUsersData => res.json(dbUsersData))
+        .catch(err => {
+            console.log(err);
+            res.status(500).json(err);
+        });
+    },
+
+
+    getUsersById({params}, res) {
+        Users.findOne({_id: params.id })
+        .populate({path: 'thoughts', select: '-__v'})
+        .populate({path: 'friends', select: '-__v'})
+        .select('-__v')
+    
+        .then(dbUsersData => {
+            if(!dbUsersData) {
+                res.status(404).json({message: 'No User with this particular ID!'});
+                return; 
+            }
+            res.json(dbUsersData)
+        })
+        .catch(err => {
+            console.log(err);
+            res.status(400).json(err)
+        })
+    },
+
+  
+    updateUsers({params, body}, res) {
+        Users.findOneAndUpdate({_id: params.id}, body, {new: true, runValidators: true})
+        .then(dbUsersData => {
+            if(!dbUsersData) {
+                res.status(404).json({message: 'No User with this particular ID!'});
                 return;
             }
-   
-            res.json({message:"Wahoo! You've added a new friend to this user!", user});
+            res.json(dbUserData);
         })
-        .catch((err)=>{
-            res.status(400).json({message: "Borked!!", err})
-        })
-},
+        .catch(err => res.json(err))
+    },
 
-  deleteFriend(req, res) {
-    User.findOneAndUpdate(
-      { _id: req.params.id },
-      { $pull: { friends:req.params.friendId } },
- { runValidators: true, new: true }
-    )
-      .then((user) =>
-        !user
-          ? res
-              .status(404)
-              .json({ message: "No such user exists with that ID!" })
-          : res.json({message:"Wahoo! You've deleted a friend from this user!", user})
-      )
-      .catch((err) => res.status(500).json({message: "Borked!!", err}));
-  },
+    deleteUsers({params}, res) {
+        Users.findOneAndDelete({_id: params.id})
+        .then(dbUsersData => {
+            if(!dbUsersData) {
+                res.status(404).json({message: 'No User with this particular ID!'});
+                return;
+            }
+            res.json(dbUsersData);
+        })
+        .catch(err => res.status(400).json(err));
+    },
+
+    addFriend({params}, res) {
+        Users.findOneAndUpdate({_id: params.id}, {$push: { friends: params.friendId}}, {new: true})
+        .populate({path: 'friends', select: ('-__v')})
+        .select('-__v')
+        .then(dbUsersData => {
+            if (!dbUsersData) {
+                res.status(404).json({message: 'No User with this particular ID!'});
+                return;
+            }
+        res.json(dbUsersData);
+        })
+        .catch(err => res.json(err));
+    },
+
+  
+    deleteFriend({ params }, res) {
+        Users.findOneAndUpdate({_id: params.id}, {$pull: { friends: params.friendId}}, {new: true})
+        .populate({path: 'friends', select: '-__v'})
+        .select('-__v')
+        .then(dbUsersData => {
+            if(!dbUsersData) {
+                res.status(404).json({message: 'No User with this particular ID!'});
+                return;
+            }
+            res.json(dbUsersData);
+        })
+        .catch(err => res.status(400).json(err));
+    }
+
 };
+
+
+module.exports = usersController; 
