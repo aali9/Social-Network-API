@@ -27,4 +27,4 @@ https://drive.google.com/file/d/1ePn7CKWEH6TlyKNRCZ4IkRZ3ErPDu395/view
 
 # Screenshot -demo 
 
-![Screen Shot](./assets/screenshot.png)
+![Screen Shot](./images/screenshot.png)
