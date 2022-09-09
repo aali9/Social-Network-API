@@ -1,7 +1,7 @@
 // Require express and mongoose
 const express = require("express");
 const db = require("./config/connection");
-// changed back to port 3001
+// listening at port 3001
 const PORT = process.env.PORT || 3001;
 const app = express();
 
