@@ -1,7 +1,7 @@
 const { Schema, model } = require("mongoose");
 const dateFormat = require("../utils/dateFormat");
 const reactionSchema = require("./Reaction");
-
+//thoughts schema
 const thoughtSchema = new Schema(
   {
     thoughtText: {
